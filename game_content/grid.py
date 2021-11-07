@@ -1,7 +1,14 @@
 import pyglet.shapes as shapes
 import numpy as np
+from pathlib import Path
+import sys
 
-from . import grid_column, load
+ROOT_DIR_PATH = str(Path(__file__).resolve().parent.parent)
+if ROOT_DIR_PATH not in sys.path:
+    sys.path.insert(1, ROOT_DIR_PATH)
+
+from game_content.grid_column import Column
+from game_content.load import winning_grids
 
 
 # color : (0,0,0) is black
@@ -10,6 +17,8 @@ YELLOW_HOVER = (150,150,50)
 YELLOW_COIN = (255,255,0)
 RED_HOVER = (150,50,50)
 RED_COIN = (255,0,0)
+
+WINNING_GRIDS = winning_grids()
 
 
 class Grid():
@@ -35,7 +44,7 @@ class Grid():
         # verify that self.grid_array doesn't have a winning pattern
         # if self.grid_array has a winning pattern, stop the game and highlight the
         # 4 connected coins
-        self.grid_columns = [grid_column.Column(col, batch, BRIGHT_COLOR, YELLOW_HOVER, YELLOW_COIN, RED_HOVER, RED_COIN) for col in range(7)]
+        self.grid_columns = [Column(col, batch, BRIGHT_COLOR, YELLOW_HOVER, YELLOW_COIN, RED_HOVER, RED_COIN) for col in range(7)]
 
         # tests
         # self.grid_columns[2].slots_circles[3].color = (0,0,0)
@@ -44,44 +53,52 @@ class Grid():
         self.next_coin = True
 
         # load all possible winning positions
-        self.possible_winning_positions = load.winning_positions()
+        # self.possible_winning_positions = load.winning_positions()
 
         # 0: no win, 1: yellow won, 2: red won
         self.winner = 0
 
         # timer
         self.timer = 0.
-        self.tictoc = True
+
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.mouse_x, self.mouse_y = x, y
+
 
     def on_mouse_press(self, x, y, button, modifiers):
 
         if self.winner == 0:
 
             # add a coin
+            old_coin = self.next_coin
             self.next_coin, self.grid_array = self.grid_columns[int(x / 100)].add_coin(self.next_coin, self.grid_array)
 
-            # check if there is a win
-            for win_grid in self.possible_winning_positions:
-                if np.array_equal((self.grid_array == 1) & win_grid, win_grid):
-                    print("YELLOW WINS")
-                    self.winner = 1
-                    self.winner_positions = win_grid
-                elif np.array_equal((self.grid_array == 2) & win_grid, win_grid):
-                    print("RED WINS")
-                    self.winner = 2
-                    self.winner_positions = win_grid
+            # check if there is a win, only if a coin was added
+            if self.next_coin != old_coin:
+                for win_grid in WINNING_GRIDS:
+                    if np.array_equal((self.grid_array == 1) & win_grid, win_grid):
+                        print("YELLOW WINS")
+                        self.winner = 1
+                        self.winner_positions = win_grid
+                        break
+                    elif np.array_equal((self.grid_array == 2) & win_grid, win_grid):
+                        print("RED WINS")
+                        self.winner = 2
+                        self.winner_positions = win_grid
+                        break
+
 
     # def on_mouse_release(self, x, y, button, modifiers):
     #     self.mouse_state = False
+
 
     def on_resize(self, width, height):
         # print("resizing")
         # self.background.width = width
         # self.background.height = height
         pass
+
 
     def highlight_winner(self, dt):
         self.timer += dt
@@ -110,3 +127,7 @@ class Grid():
         else:
             # highlight the winning connect 4
             self.highlight_winner(dt)
+
+
+if __name__ == "__main__":
+    print("hello world!")

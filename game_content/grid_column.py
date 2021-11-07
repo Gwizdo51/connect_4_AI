@@ -1,5 +1,11 @@
-import pyglet
 import pyglet.shapes as shapes
+from pathlib import Path
+import sys
+
+ROOT_DIR_PATH = str(Path(__file__).resolve().parent.parent)
+if ROOT_DIR_PATH not in sys.path:
+    sys.path.insert(1, ROOT_DIR_PATH)
+
 
 class Column():
 
@@ -20,6 +26,7 @@ class Column():
 
         self.next_empty = 5
 
+
     def mouse_hover(self, mouse_x, next_coin):
         # if mouse_x is hovering this column, highlight the next empty slot with
         # the next color ; otherwise, reset to default color
@@ -28,6 +35,7 @@ class Column():
                 self.slots_circles[self.next_empty].color = self.yellow_hover if next_coin else self.red_hover
             else:
                 self.slots_circles[self.next_empty].color = self.bright_color
+
 
     def add_coin(self, next_coin, grid_array):
         # print(f"added coin to column {self.column_number}")

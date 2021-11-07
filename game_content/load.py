@@ -1,7 +1,13 @@
 import numpy as np
+from pathlib import Path
+import sys
+
+ROOT_DIR_PATH = str(Path(__file__).resolve().parent.parent)
+if ROOT_DIR_PATH not in sys.path:
+    sys.path.insert(1, ROOT_DIR_PATH)
 
 
-def winning_positions():
+def winning_grids():
     "create a list of arrays of shape (6,7) of booleans containing all 69 possible winning coin positions"
 
     # create horizontal solutions (24)
@@ -76,4 +82,4 @@ if __name__ == "__main__":
     # for solution in solutions:
     #     print(solution)
 
-    print(winning_positions())
+    print(winning_grids())

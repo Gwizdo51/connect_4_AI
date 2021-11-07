@@ -1,5 +1,11 @@
 import pyglet
 from pyglet.window import key
+from pathlib import Path
+import sys
+
+ROOT_DIR_PATH = str(Path(__file__).resolve().parent)
+if ROOT_DIR_PATH not in sys.path:
+    sys.path.insert(1, ROOT_DIR_PATH)
 
 from game_content.grid import Grid
 
