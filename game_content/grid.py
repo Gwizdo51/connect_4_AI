@@ -52,9 +52,6 @@ class Grid():
         # True: yellow, False: red
         self.next_coin = True
 
-        # load all possible winning positions
-        # self.possible_winning_positions = load.winning_positions()
-
         # 0: no win, 1: yellow won, 2: red won
         self.winner = 0
 
