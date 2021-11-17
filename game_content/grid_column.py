@@ -36,8 +36,8 @@ class Column():
     def add_coin(self, next_coin, grid_array):
         # print(f"added coin to column {self.column_number}")
         if self.next_empty >= 0:
-            # 1: yellow, 2: red
-            grid_array[self.next_empty, self.column_number] = 1 if next_coin else 2
+            # 1: yellow, -1: red
+            grid_array[self.next_empty, self.column_number] = 1 if next_coin else -1
             self.slots_circles[self.next_empty].color = YELLOW_COIN if next_coin else RED_COIN
             self.next_empty -= 1
             next_coin = not next_coin

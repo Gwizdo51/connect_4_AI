@@ -19,7 +19,7 @@ class Grid():
 
     def __init__(self, window_width, window_height, batch):
 
-        self.grid_array = np.zeros((6,7), dtype=np.uint8)
+        self.grid_array = np.zeros((6,7), dtype=np.int8)
         # print(self.grid_array)
 
         self.window_width, self.window_height = window_width, window_height
@@ -73,7 +73,7 @@ class Grid():
                         self.winner = 1
                         self.winner_positions = win_grid
                         break
-                    elif np.array_equal((self.grid_array == 2) & win_grid, win_grid):
+                    elif np.array_equal((self.grid_array == -1) & win_grid, win_grid):
                         print("RED WINS")
                         self.winner = 2
                         self.winner_positions = win_grid
