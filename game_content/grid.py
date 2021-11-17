@@ -8,17 +8,11 @@ if ROOT_DIR_PATH not in sys.path:
     sys.path.insert(1, ROOT_DIR_PATH)
 
 from game_content.grid_column import Column
-from game_content.load import winning_grids
+from game_content.load import BRIGHT_COLOR, YELLOW_COIN, YELLOW_HOVER, \
+                              RED_COIN, RED_HOVER, WINNING_GRIDS
 
 
 # color : (0,0,0) is black
-BRIGHT_COLOR = (150,150,160)
-YELLOW_HOVER = (150,150,50)
-YELLOW_COIN = (255,255,0)
-RED_HOVER = (150,50,50)
-RED_COIN = (255,0,0)
-
-WINNING_GRIDS = winning_grids()
 
 
 class Grid():
@@ -44,7 +38,7 @@ class Grid():
         # verify that self.grid_array doesn't have a winning pattern
         # if self.grid_array has a winning pattern, stop the game and highlight the
         # 4 connected coins
-        self.grid_columns = [Column(col, batch, BRIGHT_COLOR, YELLOW_HOVER, YELLOW_COIN, RED_HOVER, RED_COIN) for col in range(7)]
+        self.grid_columns = [Column(col, batch) for col in range(7)]
 
         # tests
         # self.grid_columns[2].slots_circles[3].color = (0,0,0)

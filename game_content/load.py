@@ -14,7 +14,7 @@ def winning_grids():
     sol_set_h = []
     for line in range(6):
         for col in range(4):
-            solution = np.zeros((6,7), dtype = bool)
+            solution = np.zeros(shape=(6,7), dtype=bool)
             solution[line, col] = True
             solution[line, col+1] = True
             solution[line, col+2] = True
@@ -25,7 +25,7 @@ def winning_grids():
     sol_set_v = []
     for line in range(3):
         for col in range(7):
-            solution = np.zeros((6,7), dtype = bool)
+            solution = np.zeros(shape=(6,7), dtype=bool)
             solution[line, col] = True
             solution[line+1, col] = True
             solution[line+2, col] = True
@@ -36,7 +36,7 @@ def winning_grids():
     sol_set_tlbr = []
     for line in range(3):
         for col in range(4):
-            solution = np.zeros((6,7), dtype = bool)
+            solution = np.zeros(shape=(6,7), dtype=bool)
             solution[line, col] = True
             solution[line+1, col+1] = True
             solution[line+2, col+2] = True
@@ -47,7 +47,7 @@ def winning_grids():
     sol_set_trbl = []
     for line in range(3):
         for col in range(4):
-            solution = np.zeros((6,7), dtype = bool)
+            solution = np.zeros(shape=(6,7), dtype=bool)
             solution[line, col+3] = True
             solution[line+1, col+2] = True
             solution[line+2, col+1] = True
@@ -55,6 +55,15 @@ def winning_grids():
             sol_set_trbl.append(solution)
 
     return sol_set_h + sol_set_v + sol_set_tlbr + sol_set_trbl
+
+
+BRIGHT_COLOR = (150,150,160)
+YELLOW_HOVER = (150,150,50)
+YELLOW_COIN = (255,255,0)
+RED_HOVER = (150,50,50)
+RED_COIN = (255,0,0)
+
+WINNING_GRIDS = winning_grids()
 
 
 if __name__ == "__main__":
