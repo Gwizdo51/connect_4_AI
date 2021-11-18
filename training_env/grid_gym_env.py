@@ -108,13 +108,52 @@ class Connect4Env:
         return next_state, reward, self.done, legal_actions
 
 
-    def display(self):
-        print(self.grid_array)
+    @staticmethod
+    def _display_line(line: np.ndarray):
+        line_list = list(line)
+        mapper = {
+            0: " ",
+            1: "O",
+            -1: "X"
+        }
+        line_to_display = " | ".join([mapper[item] for item in line_list])
+        line_to_display = "| " + line_to_display + " |"
+        print(line_to_display)
+
+
+    @staticmethod
+    def display(grid: np.ndarray):
+        """
+        O : yellow
+        X : red
+
+        +---+---+---+---+---+---+---+
+        |   |   |   |   |   |   |   |
+        +---+---+---+---+---+---+---+
+        |   |   |   |   |   |   |   |
+        +---+---+---+---+---+---+---+
+        |   |   |   |   |   |   |   |
+        +---+---+---+---+---+---+---+
+        |   |   |   |   |   |   |   |
+        +---+---+---+---+---+---+---+
+        |   |   |   | X |   |   |   |
+        +---+---+---+---+---+---+---+
+        |   |   |   | O |   |   |   |
+        +---+---+---+---+---+---+---+
+        """
+
+        inter_line = "+---+---+---+---+---+---+---+"
+        for line_number in range(grid.shape[0]):
+            print(inter_line)
+            Connect4Env._display_line(grid[line_number])
+        print(inter_line)
+
 
 
     def display_game_history(self):
         for step in self.history:
-            print(step)
+            Connect4Env.display(step)
+            print()
 
 
 if __name__ == "__main__":
@@ -129,12 +168,12 @@ if __name__ == "__main__":
             + "\n"
         )
         env.reset()
-        env.display()
+        env.display(env.grid_array)
         player = 1
         while not env.done:
             _, _, _, legal_actions = env.step(player, int(input("column: ")))
             print(legal_actions)
-            env.display()
+            env.display(env.grid_array)
             player *= -1
         print("game history:")
         env.display_game_history()
