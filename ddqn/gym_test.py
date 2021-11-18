@@ -17,8 +17,15 @@ from gym import wrappers
 import numpy as np
 from tqdm import tqdm
 import copy
+import sys
+from pathlib import Path
 
-from ddqn_keras import DDQNAgent
+ROOT_DIR_PATH = str(Path(__file__).resolve().parent.parent)
+if ROOT_DIR_PATH not in sys.path:
+    sys.path.insert(1, ROOT_DIR_PATH)
+
+from ddqn.ddqn_keras import DDQNAgent
+
 
 if __name__ == "__main__":
 
@@ -36,7 +43,7 @@ if __name__ == "__main__":
     # print()
     # print(vars(ddqn_agent_2))
 
-    n_games = 1
+    n_games = 2
     ddqn_scores = []
     eps_history = []
 
@@ -46,12 +53,15 @@ if __name__ == "__main__":
         done = False
         score = 0
         state = env.reset()
+        # print(state)
+        # print(state.dtype)
+        # break
         state_id = 0
         while not done:
             state_id += 1
             if state_id % 5 == 0:
-                print("|"*int(state_id / 5), end="\r")
-            action = ddqn_agent.choose_greedy_action(state)
+                print("|"*(state_id // 5), end="\r")
+            action = ddqn_agent.choose_action(state)
             new_state, reward, done, info = env.step(action)
             score += reward
             ddqn_agent.remember(state, action, reward, new_state, done)
@@ -70,7 +80,7 @@ if __name__ == "__main__":
         print("average score:".ljust(15), round(avg_score, 2))
 
         if game_id % 10 == 0 and game_id > 0:
-            ddqn_agent.save_model()
+            ddqn_agent.save_model(file_name="connect_4_model_vs_random.h5")
 
     # for env_spec in gym.envs.registry.all():
     #     print(env_spec)

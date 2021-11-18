@@ -72,7 +72,6 @@ def build_dqn(learning_rate, n_actions, input_dims, fc1_dims, fc2_dims):
         loss="mse",
     )
 
-    model.summary()
     return model
 
 
@@ -80,7 +79,7 @@ class DDQNAgent:
 
     def __init__(self, alpha, gamma, n_actions, epsilon, batch_size, input_dims,
                  epsilon_dec=0.996, epsilon_min=0.01, mem_size=int(1e6),
-                 file_name="ddqn_model.h5", replace_target=100):
+                 weights_file_name="ddqn_model.h5", replace_target_interval=100):
         self.n_actions = n_actions
         self.action_space = [i for i in range(self.n_actions)]
         # n_actions = 5 => action_space = [0, 1, 2, 3, 4]
@@ -89,10 +88,11 @@ class DDQNAgent:
         self.epsilon_dec = epsilon_dec
         self.epsilon_min = epsilon_min
         self.batch_size = batch_size
-        self.model_file = file_name
-        self.replace_target = replace_target
+        self.model_file = weights_file_name
+        self.replace_target_interval = replace_target_interval
         self.memory = ReplayBuffer(mem_size, input_dims, n_actions, True)
         self.q_eval = build_dqn(alpha, n_actions, input_dims, 256, 256)
+        self.q_eval.summary()
         self.q_target = build_dqn(alpha, n_actions, input_dims, 256, 256)
 
 
@@ -101,26 +101,74 @@ class DDQNAgent:
 
 
     def choose_action(self, state: np.ndarray, legal_actions=None):
+        """
+        Parameters
+        ----------
+        state: np.ndarray
+            The state from which to take an action
+        legal_actions: list of ints | None = None
+            List of all legal (possible) actions for this step.
+            If None, all actions are legal. Defaults to None.
+        """
 
         # state = state[np.newaxis, :]
         state = state.reshape(1, -1)
         rand = np.random.random()
 
-        if rand < self.epsilon:
-            action = np.random.choice(self.action_space)
+        # if all moves are allowed ...
+        if legal_actions is None:
+            if rand < self.epsilon:
+                action = np.random.choice(self.action_space)
+            else:
+                actions = self.q_eval.predict(state).squeeze()
+                action = np.argmax(actions)
+
+        # if some moves are allowed ...
         else:
-            actions = self.q_eval.predict(state)
-            action = np.argmax(actions)
+            if rand < self.epsilon:
+                # select a random legal action
+                action = np.random.choice(legal_actions)
+            else:
+                # predict the best actions in this state
+                actions = self.q_eval.predict(state).squeeze()
+                # create a boolean mask that points to legal actions
+                legal_actions_mask = np.zeros(shape=self.n_actions, dtype=bool)
+                legal_actions_mask[legal_actions] = True
+                # select the best legal action
+                legal_action = np.argmax(actions[legal_actions_mask])
+                # return the actual action
+                action = legal_actions[legal_action]
 
         return action
 
 
     def choose_greedy_action(self, state: np.ndarray, legal_actions=None):
+        """
+        Parameters
+        ----------
+        state: np.ndarray
+            The state from which to take an action
+        legal_actions: list of ints | None = None
+            List of all legal (possible) actions for this step.
+            If None, all actions are legal. Defaults to None.
+        """
+
         state = state.reshape(1, -1)
-        actions = self.q_eval.predict(state)
-        print(actions.shape)
-        action = np.argmax(actions)
-        print(action.shape)
+
+        if legal_actions is None:
+            actions = self.q_eval.predict(state).squeeze()
+            action = np.argmax(actions)
+        else:
+            # predict the best actions in this state
+            actions = self.q_eval.predict(state).squeeze()
+            # create a boolean mask that points to legal actions
+            legal_actions_mask = np.zeros(shape=self.n_actions, dtype=bool)
+            legal_actions_mask[legal_actions] = True
+            # select the best legal action
+            legal_action = np.argmax(actions[legal_actions_mask])
+            # return the actual action
+            action = legal_actions[legal_action]
+
         return action
 
 
@@ -149,7 +197,7 @@ class DDQNAgent:
 
             self.epsilon = max(self.epsilon*self.epsilon_dec, self.epsilon_min)
 
-            if self.memory.mem_counter % self.replace_target == 0:
+            if self.memory.mem_counter % self.replace_target_interval == 0:
                 self.update_network_parameters()
 
 
