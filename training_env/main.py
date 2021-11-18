@@ -1,6 +1,6 @@
 import os
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"] = ""
 import sys
 from pathlib import Path
 from tqdm import tqdm
@@ -22,7 +22,7 @@ if ROOT_DIR_PATH not in sys.path:
 
 from training_env.grid_gym_env import Connect4Env
 from ddqn.ddqn_keras import DDQNAgent
-from training_env.random_agent import RandomAgent
+from training_env.utils_agents import RandomAgent, HumanAgent
 
 
 """
@@ -41,7 +41,10 @@ def train_method_1(
     alpha=0.0005,
     gamma=0.99,
     epsilon_dec=0.996,
-    batch_size=64
+    epsilon_min=0.01,
+    batch_size=64,
+    replace_target_interval=100,
+    verbose=False
     ):
 
     # Play as yellow, then red, then yellow ...
@@ -53,16 +56,18 @@ def train_method_1(
         n_actions=7,
         epsilon=1.0,
         epsilon_dec=epsilon_dec,
+        epsilon_min=epsilon_min,
         batch_size=batch_size,
         input_dims=42,
-        weights_file_name="ddqn_connect4_method1.h5"
+        replace_target_interval=replace_target_interval,
+        weights_file_name="temp.h5"
     )
     random_agent = RandomAgent(n_actions=7)
 
     ddqn_scores = []
     eps_history = []
 
-    print("setup complete, begin playing")
+    print("setup complete, begin playing") if verbose else ...
 
     for game_id in tqdm(range(n_games * 2)):
 
@@ -71,21 +76,22 @@ def train_method_1(
         new_state, legal_actions = env.reset()
 
         if game_id % 2 == 0:
-            print("ddqn agent is yellow")
+            print("ddqn agent is yellow") if verbose else ...
             yellow_player = ddqn_agent
             red_player = random_agent
         else:
-            print("ddqn agent is red")
+            print("ddqn agent is red") if verbose else ...
             yellow_player = random_agent
             red_player = ddqn_agent
 
         current_player = "yellow"
 
         while not done:
-            print(f"first move: {first_move}")
-            print(f"current player: {current_player}")
-            print("current state:")
-            env.display()
+            if verbose:
+                print(f"first move: {first_move}")
+                print(f"current player: {current_player}")
+                print("current state:")
+                env.display()
             # yellow turn
             if current_player == "yellow":
                 yellow_state = new_state.copy()
@@ -96,7 +102,7 @@ def train_method_1(
                     yellow_player.learn()
                 # play
                 yellow_action = yellow_player.choose_action(yellow_state, legal_actions)
-                print(f"yellow action: {yellow_action}")
+                print(f"yellow action: {yellow_action}") if verbose else ...
                 new_state, reward, done, legal_actions = env.step(1, yellow_action)
                 # store old state/action for learning
                 old_yellow_state = yellow_state.copy()
@@ -113,7 +119,7 @@ def train_method_1(
                     red_player.learn()
                 # play
                 red_action = red_player.choose_action(red_state, legal_actions)
-                print(f"red action: {red_action}")
+                print(f"red action: {red_action}") if verbose else ...
                 new_state, reward, done, legal_actions = env.step(-1, red_action)
                 # store old state/action for learning
                 old_red_state = red_state.copy()
@@ -123,7 +129,7 @@ def train_method_1(
                 first_move = False
 
         # after game is done
-        print(f"game over, winner: {reward}")
+        print(f"game over, winner: {reward}") if verbose else ...
         yellow_state = new_state.copy()
         yellow_player.remember(old_yellow_state, old_yellow_action, reward, yellow_state, False)
         yellow_player.learn()
@@ -141,16 +147,112 @@ def train_method_1(
             ddqn_scores.append(-reward)
             print("score:".ljust(15), -reward)
         avg_score = sum(ddqn_scores[max(0, game_id-100):])
-        print("overall score last 100 games:".ljust(15), avg_score)
+        print("average score:".ljust(15), avg_score)
+        print("epsilon".ljust(15), ddqn_agent.epsilon)
         print("#"*100 + "\n")
 
-        if game_id % 10 == 0 and game_id > 0:
+        if game_id % 50 == 0 and game_id > 0:
             ddqn_agent.save_model()
 
+    ddqn_agent.save_model()
 
-def play_vs_agent():
-    pass
+
+def play_vs_agent(yellow_player_type="human", red_player_type="human", yellow_player_model_file_name=None, red_player_model_file_name=None):
+
+    # default parameters, useless for inference
+    alpha = 0.0005
+    gamma = 0.99
+    epsilon_dec = 0.996
+    epsilon_min = 0.01
+    batch_size = 64
+    replace_target_interval = 100
+
+    # load the players
+    if yellow_player_type == "model":
+        yellow_player = DDQNAgent(
+            alpha=alpha,
+            gamma=gamma,
+            n_actions=7,
+            epsilon=0,
+            epsilon_dec=epsilon_dec,
+            epsilon_min=epsilon_min,
+            batch_size=batch_size,
+            input_dims=42,
+            replace_target_interval=replace_target_interval,
+            weights_file_name=yellow_player_model_file_name
+        )
+        yellow_player.load_model()
+    elif yellow_player_type == "human":
+        yellow_player = HumanAgent()
+    else:
+        raise ValueError("wrong input for yellow_player_type.")
+
+    if red_player_type == "model":
+        red_player = DDQNAgent(
+            alpha=alpha,
+            gamma=gamma,
+            n_actions=7,
+            epsilon=0,
+            epsilon_dec=epsilon_dec,
+            epsilon_min=epsilon_min,
+            batch_size=batch_size,
+            input_dims=42,
+            replace_target_interval=replace_target_interval,
+            weights_file_name=red_player_model_file_name
+        )
+        red_player.load_model()
+    elif red_player_type == "human":
+        red_player = HumanAgent()
+    else:
+        raise ValueError("wrong input for red_player_type.")
+
+    # begin playing
+    env = Connect4Env()
+    while True:
+
+        print("new game")
+        done = False
+        new_state, legal_actions = env.reset()
+        env.display()
+
+        current_player = "yellow"
+
+        while not done:
+            if current_player == "yellow":
+                yellow_state = new_state.copy()
+                # play
+                yellow_action = yellow_player.choose_greedy_action(yellow_state, legal_actions)
+                print(f"yellow action: {yellow_action}")
+                new_state, reward, done, legal_actions = env.step(1, yellow_action)
+                # switch players
+                current_player = "red"
+            # red turn
+            elif current_player == "red":
+                red_state = new_state.copy() * -1
+                # play
+                red_action = red_player.choose_greedy_action(red_state, legal_actions)
+                print(f"red action: {red_action}")
+                new_state, reward, done, legal_actions = env.step(-1, red_action)
+                # switch players
+                current_player = "yellow"
+            env.display()
+
+        if reward == 1:
+            print("YELLOW WINS")
+        elif reward == -1:
+            print("RED WINS")
+
 
 
 if __name__ == "__main__":
-    train_method_1(1)
+
+    # train_method_1(
+    #     1000,
+    #     epsilon_dec=(1 - np.exp(-7)),
+    #     epsilon_min=0.05
+    # )
+    play_vs_agent(
+        yellow_player_type="model",
+        red_player_type="human",
+        yellow_player_model_file_name="ddqn_connect4_method1.h5"
+    )

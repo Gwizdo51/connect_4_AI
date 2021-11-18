@@ -127,6 +127,7 @@ class Connect4Env:
         O : yellow
         X : red
 
+          0   1   2   3   4   5   6
         +---+---+---+---+---+---+---+
         |   |   |   |   |   |   |   |
         +---+---+---+---+---+---+---+
@@ -142,6 +143,7 @@ class Connect4Env:
         +---+---+---+---+---+---+---+
         """
 
+        print("  0   1   2   3   4   5   6")
         inter_line = "+---+---+---+---+---+---+---+"
         for line_number in range(grid.shape[0]):
             print(inter_line)
