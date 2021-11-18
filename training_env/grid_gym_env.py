@@ -122,7 +122,7 @@ class Connect4Env:
 
 
     @staticmethod
-    def display(grid: np.ndarray):
+    def _display_grid(grid: np.ndarray):
         """
         O : yellow
         X : red
@@ -149,10 +149,13 @@ class Connect4Env:
         print(inter_line)
 
 
+    def display(self):
+        Connect4Env._display_grid(self.grid_array)
+
 
     def display_game_history(self):
         for step in self.history:
-            Connect4Env.display(step)
+            Connect4Env._display_grid(step)
             print()
 
 
@@ -168,12 +171,12 @@ if __name__ == "__main__":
             + "\n"
         )
         env.reset()
-        env.display(env.grid_array)
+        env.display()
         player = 1
         while not env.done:
             _, _, _, legal_actions = env.step(player, int(input("column: ")))
             print(legal_actions)
-            env.display(env.grid_array)
+            env.display()
             player *= -1
         print("game history:")
         env.display_game_history()
