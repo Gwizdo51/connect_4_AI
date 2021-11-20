@@ -1,9 +1,8 @@
 from keras.layers import Dense, Activation, Input
 from keras.models import load_model
+from keras import Model, Sequential
 from tensorflow.keras.optimizers import Adam
 import numpy as np
-
-from keras import Model, Sequential
 
 
 class ReplayBuffer:
@@ -59,13 +58,31 @@ class ReplayBuffer:
         return states, actions, rewards, new_states, terminal
 
 
-def build_dqn(learning_rate, n_actions, input_dims, fc1_dims, fc2_dims):
+# def build_dqn(learning_rate, n_actions, input_dims, fc1_dim, fc2_dim):
+def build_dqn(learning_rate, n_actions, input_dims, hidden_layer_dims):
 
-    input = Input(shape=(input_dims,))
-    main = Dense(fc1_dims, activation="relu")(input)
-    main = Dense(fc2_dims, activation="relu")(main)
-    output = Dense(n_actions)(main)
-    model = Model(input, output)
+    # input = Input(shape=(input_dims,))
+    # main = Dense(fc1_dim, activation="relu")(input)
+    # main = Dense(fc2_dim, activation="relu")(main)
+    # output = Dense(n_actions)(main)
+    # model = Model(input, output)
+
+    # input = Input(shape=(input_dims,))
+    # first_hidden_layer = True
+    # for dim in hidden_layer_dims:
+    #     if first_hidden_layer:
+    #         main = Dense(dim, activation="relu")(input)
+    #         first_hidden_layer = False
+    #     else:
+    #         main = Dense(dim, activation="relu")(main)
+    # output = Dense(n_actions)(main)
+    # model = Model(input, output)
+
+    model = Sequential()
+    model.add(Input(shape=(input_dims,)))
+    for dim in hidden_layer_dims:
+        model.add(Dense(dim, activation="relu"))
+    model.add(Dense(n_actions))
 
     model.compile(
         optimizer=Adam(learning_rate=learning_rate),
@@ -78,11 +95,10 @@ def build_dqn(learning_rate, n_actions, input_dims, fc1_dims, fc2_dims):
 class DDQNAgent:
 
     def __init__(self, alpha, gamma, n_actions, epsilon, batch_size, input_dims,
-                 epsilon_dec=0.996, epsilon_min=0.01, mem_size=int(1e6),
+                 epsilon_dec=("geometric", 0.996), epsilon_min=0.01, mem_size=int(1e6),
                  weights_file_name="ddqn_model.h5", replace_target_interval=100):
         self.n_actions = n_actions
         self.action_space = [i for i in range(self.n_actions)]
-        # n_actions = 5 => action_space = [0, 1, 2, 3, 4]
         self.gamma = gamma
         self.epsilon = epsilon
         self.epsilon_dec = epsilon_dec
@@ -91,9 +107,10 @@ class DDQNAgent:
         self.model_file = weights_file_name
         self.replace_target_interval = replace_target_interval
         self.memory = ReplayBuffer(mem_size, input_dims, n_actions, True)
-        self.q_eval = build_dqn(alpha, n_actions, input_dims, 256, 256)
+        ddqn_params = [alpha, n_actions, input_dims, [512, 256]]
+        self.q_eval = build_dqn(*ddqn_params)
+        self.q_target = build_dqn(*ddqn_params)
         self.q_eval.summary()
-        self.q_target = build_dqn(alpha, n_actions, input_dims, 256, 256)
 
 
     def remember(self, state, action, reward, new_state, done):
@@ -195,9 +212,15 @@ class DDQNAgent:
 
             self.q_eval.fit(state, q_target, verbose=0)
 
-            self.epsilon = max(self.epsilon*self.epsilon_dec, self.epsilon_min)
+            # geometric: epsilon_dec == 0.996
+            if self.epsilon_dec[0] == "geometric":
+                self.epsilon = max(self.epsilon * self.epsilon_dec[1], self.epsilon_min)
+            # linear: epsilon_dec = 9e-7
+            elif self.epsilon_dec[0] == "linear":
+                self.epsilon = max(self.epsilon - self.epsilon_dec[1], self.epsilon_min)
 
             if self.memory.mem_counter % self.replace_target_interval == 0:
+                print("updating target network")
                 self.update_network_parameters()
 
 
@@ -216,4 +239,5 @@ class DDQNAgent:
 
 
 if __name__ == "__main__":
-    build_dqn(0.0001, 20, 10, 256, 256)
+    model = build_dqn(0.0001, 20, 10, [256, 256])
+    model.summary()

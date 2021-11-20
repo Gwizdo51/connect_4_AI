@@ -5,13 +5,10 @@ channels:
 dependencies:
   - python=3.9
   - pip=21.2.4
-  - pytorch
-  - torchvision
-  - torchaudio
   - cudatoolkit=11.3
   - cudnn
-  - cpuonly
   - pip:
     - tensorflow
     - gym
     - kaggle-environments>=0.1.6
+    - tqdm

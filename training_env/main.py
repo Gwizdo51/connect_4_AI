@@ -28,8 +28,8 @@ from training_env.utils_agents import RandomAgent, HumanAgent
 """
 Training methods:
 
-1- 2 agents, one versus the other
-2- 1 agent versus random agent
+1- 1 agent versus random agent
+2- 2 agents, one versus the other
 3- agent against himself
 4- agent against kaggle negamax
 5- start with random agent and relace it with copy of agent every X games
@@ -40,11 +40,11 @@ def train_method_1(
     n_games,
     alpha=0.0005,
     gamma=0.99,
-    epsilon_dec=0.996,
+    epsilon_dec=("linear", 9e-7),
     epsilon_min=0.01,
     batch_size=64,
     replace_target_interval=100,
-    verbose=False
+    verbose=False,
     ):
 
     # Play as yellow, then red, then yellow ...
@@ -60,7 +60,7 @@ def train_method_1(
         batch_size=batch_size,
         input_dims=42,
         replace_target_interval=replace_target_interval,
-        weights_file_name="temp.h5"
+        weights_file_name="models/method1_v1.h5"
     )
     random_agent = RandomAgent(n_actions=7)
 
@@ -243,16 +243,20 @@ def play_vs_agent(yellow_player_type="human", red_player_type="human", yellow_pl
             print("RED WINS")
 
 
-
 if __name__ == "__main__":
 
-    # train_method_1(
-    #     1000,
-    #     epsilon_dec=(1 - np.exp(-7)),
-    #     epsilon_min=0.05
-    # )
-    play_vs_agent(
-        yellow_player_type="model",
-        red_player_type="human",
-        yellow_player_model_file_name="ddqn_connect4_method1.h5"
+    train_method_1(
+        2000,
+        epsilon_dec=("linear", 9e-5),
+        epsilon_min=0.1,
+        verbose=False,
+        alpha=0.0005,
+        gamma=0.99,
+        batch_size=128,
+        replace_target_interval=1000
     )
+    # play_vs_agent(
+    #     yellow_player_type="model",
+    #     red_player_type="human",
+    #     yellow_player_model_file_name="ddqn_connect4_method1.h5"
+    # )
